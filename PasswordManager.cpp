@@ -1,6 +1,7 @@
 // PasswordManager.cpp
 
 #include "PasswordManager.h"
+#include "encryptionfile.h"
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -28,7 +29,9 @@ void savePassword(const string& site, const string& password) {
         cerr << "Error: Unable to open file for writing." << endl;
         return;
     }
-    file << site << ' ' << password << '\n';
+	// Encrypt the password before saving
+	string encryptedPassword = encrypt(password);
+    file << site << ' ' << encryptedPassword << '\n';
     displayMessage("Password saved successfully.");
 }
 
@@ -46,8 +49,10 @@ void loadPasswords() {
         if (pos == string::npos) continue;
         string site = line.substr(0, pos);
         string password = line.substr(pos + 1);
+		// Decrypt the password before displaying
+		string decryptedPass = decrypt(password);
         cout << "Site: " << site
-            << "  Password: " << password << endl;
+            << "  Password: " << decryptedPass << endl;
     }
 }
 
@@ -78,8 +83,10 @@ void deletePassword() {
     while (true) {
         displayMessage("\nSelect a password to delete:");
         for (size_t i = 0; i < entries.size(); ++i) {
+			// Decrypt the password before displaying
+			string decryptedPass = decrypt(entries[i].second);
             cout << i + 1 << ". Site: " << entries[i].first
-                << "  Password: " << entries[i].second << endl;
+                << "  Password: " << decryptedPass << endl;
         }
         int backVar = static_cast<int>(entries.size()) + 1;
         cout << backVar << ". Back to main menu" << endl;

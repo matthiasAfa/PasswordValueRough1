@@ -1,6 +1,5 @@
-// PasswordValueRoughMain.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
 #include "PasswordManager.h"
+#include "encryptionfile.h"
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -13,6 +12,11 @@ int main() {
     int choice = 0;
     string site;
     string password;
+
+    string encryptionKey;
+    cout << "Enter encryption key: ";
+    getline(cin, encryptionKey);
+    setEncryptionKey(encryptionKey);
 
     do {
         displayMenu();
