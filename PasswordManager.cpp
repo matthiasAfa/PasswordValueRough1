@@ -1,8 +1,6 @@
-// PasswordManager.cpp
-
 #include "PasswordManager.h"
+#include "masterPassword.h"
 #include "encryptionfile.h"
-#include "masterPassword.h" 
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -12,9 +10,8 @@
 using namespace std;
 
 void displayMessage(const string& msg) {
-    cout << msg << endl;
+    cout << msg << "\n";
 }
-
 void displayMenu() {
     displayMessage("\nPassword Manager");
     displayMessage("1. Add Password");
@@ -25,47 +22,32 @@ void displayMenu() {
 }
 
 void savePassword(const string& site, const string& password) {
-    ofstream file("passwords.txt", ios::app);
-    if (!file) {
-        cerr << "Error: Unable to open file for writing." << endl;
-        return;
-    }
-	// Randomize encryption key
-	file << site << ' ' << encrypt(password) << '\n';
-	displayMessage("[system] Password saved successfully.");
+    ofstream fout(VAULT_FILE, ios::app);
+    if (!fout) { cerr << "Cannot open vault\n"; return; }
+    fout << site << ' ' << encrypt(password) << '\n';
+    displayMessage("Saved.");
 }
 
 void loadPasswords() {
-    ifstream file("passwords.txt");
-    if (!file) {
-        cerr << "[system] No passwords saved yet." << endl;
-        return;
-    }
-
-    displayMessage("\nSaved Passwords:");
+    ifstream fin(VAULT_FILE);
+    if (!fin) { displayMessage("No entries."); return; }
+    displayMessage("\nYour entries:");
     string line;
-    while (getline(file, line)) {
+    setEncryptionKey(encryptionKey); // already set
+    while (getline(fin, line)) {
         auto pos = line.find_last_of(' ');
         if (pos == string::npos) continue;
-        string site = line.substr(0, pos);
-        string password = line.substr(pos + 1);
-		// Decrypt the password before displaying
-		string decryptedPass = decrypt(password);
-        cout << "Site: " << site
-            << "  Password: " << decryptedPass << endl;
+        cout << "Site: " << line.substr(0, pos)
+            << "  Pass: " << decrypt(line.substr(pos + 1)) << "\n";
     }
 }
 
 void deletePassword() {
     vector<pair<string, string>> entries;
-    ifstream inFile("passwords.txt");
-    if (!inFile) {
-        cerr << "Error: Unable to open file for reading." << endl;
-        return;
-    }
-
+    ifstream fin(VAULT_FILE);
+    setEncryptionKey(encryptionKey);
     string line;
-    while (getline(inFile, line)) {
+    while (getline(fin, line)) {
         auto pos = line.find_last_of(' ');
         if (pos == string::npos) continue;
         entries.emplace_back(
@@ -73,51 +55,29 @@ void deletePassword() {
             line.substr(pos + 1)
         );
     }
-    inFile.close();
-
-    if (entries.empty()) {
-        displayMessage("[system] No passwords to delete.");
-        return;
-    }
+    if (entries.empty()) { displayMessage("Nothing to delete."); return; }
 
     while (true) {
-        displayMessage("\nSelect a password to delete:");
+        displayMessage("Select number to delete:");
         for (size_t i = 0; i < entries.size(); ++i) {
-			// Decrypt the password before displaying
-			string decryptedPass = decrypt(entries[i].second);
-            cout << i + 1 << ". Site: " << entries[i].first
-                << "  Password: " << decryptedPass << endl;
+            cout << i + 1 << ". " << entries[i].first
+                << " (" << decrypt(entries[i].second) << ")\n";
         }
-        int backVar = static_cast<int>(entries.size()) + 1;
-        cout << backVar << ". Back to main menu" << endl;
-
-        displayMessage("Enter the number of the entry to delete: ");
-        int choice;
-        cin >> choice;
-        if (cin.fail()) {
+        size_t back = entries.size() + 1;
+        cout << back << ". Back\nChoice: ";
+        int c; cin >> c;
+        if (!cin.good() || c<1 || c>back) {
             cin.clear();
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
-            displayMessage("[system] Invalid input; please enter a number.");
+            displayMessage("Invalid.");
             continue;
         }
-        if (choice == backVar) {
-            return;
-        }
-        if (choice < 1 || choice > static_cast<int>(entries.size())) {
-            displayMessage("[system] Selection out of range; try again.");
-            continue;
-        }
-
-        entries.erase(entries.begin() + (choice - 1));
-        ofstream outFile("passwords.txt", ios::trunc);
-        if (!outFile) {
-            cerr << "Error: Unable to open file for writing." << endl;
-            return;
-        }
-        for (const auto& p : entries) {
-            outFile << p.first << ' ' << p.second << '\n';
-        }
-        displayMessage("Password deleted successfully.");
+        if (c == back) return;
+        entries.erase(entries.begin() + c - 1);
+        ofstream fout(VAULT_FILE, ios::trunc);
+        for (auto& e : entries)
+            fout << e.first << ' ' << e.second << '\n';
+        displayMessage("Deleted.");
         return;
     }
 }

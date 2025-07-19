@@ -1,42 +1,52 @@
-#include "PasswordManager.h"
-#include "encryptionfile.h"
-#include "masterPassword.h"
 #include <iostream>
-#include <fstream>
 #include <string>
-#include <vector>
 #include <limits>
-
+#include "masterPassword.h"
+#include "encryptionfile.h"
+#include "PasswordManager.h"
 using namespace std;
 
 int main() {
-    initializeMaster();  // ? unlock & rotate session key
+    cout << "Enter your username: ";
+    string username;
+    getline(cin, username);
+    setUser(username);
+    initializeMaster();
 
-    int choice = 0;
-    string site, pw;
-    do {
+    while (true) {
         displayMenu();
-        cin >> choice;
-        if (cin.fail()) {
+        int choice;
+        if (!(cin >> choice)) {
             cin.clear();
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
-            choice = 0;
+            cout << "[Error] Please enter a number.\n";
+            continue;
         }
-        switch (choice) {
-        case 1:
-            displayMessage("Enter site name:");
-            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+        if (choice == 1) {
+            cout << "Enter site name: ";
+            string site;
             getline(cin, site);
-            displayMessage("Enter password:");
-            cin >> pw;
+            cout << "Enter password: ";
+            string pw;
+            getline(cin, pw);
             savePassword(site, pw);
-            break;
-        case 2: loadPasswords(); break;
-        case 3: deletePassword(); break;
-        case 4: displayMessage("[Goodbye]"); break;
-        default: displayMessage("[Error] Invalid choice.");
         }
-    } while (choice != 4);
+        else if (choice == 2) {
+            loadPasswords();
+        }
+        else if (choice == 3) {
+            deletePassword();
+        }
+        else if (choice == 4) {
+            cout << "Goodbye!\n";
+            break;
+        }
+        else {
+            cout << "[Error] Invalid choice.\n";
+        }
+    }
 
     return 0;
 }

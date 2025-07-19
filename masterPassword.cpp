@@ -1,5 +1,3 @@
-// masterPassword.cpp
-
 #include "masterPassword.h"
 #include "encryptionfile.h"
 #include <iostream>
@@ -10,47 +8,61 @@
 
 using namespace std;
 
-const char* MASTER_FILE = "master.txt";
-const char* KEY_FILE = "key.txt";
-const size_t DEFAULT_KEY_LENGTH = 32;
 
-// Generate a random printable-ASCII string
+
+// these get set by setUser(...)
+string MASTER_FILE;
+string KEY_FILE;
+string VAULT_FILE;
+
+// length of the session key
+static const size_t DEFAULT_KEY_LENGTH = 32;
+
+// helper: generate a printable-ASCII random key
 static string randomKey(size_t len) {
     random_device rd;
     mt19937 gen(rd());
-    uniform_int_distribution<> dist(33, 126);
-    string key;
-    key.reserve(len);
+    uniform_int_distribution<> d(33, 126);
+    string s;
+    s.reserve(len);
     for (size_t i = 0; i < len; ++i) {
-        key += char(dist(gen));
+        s.push_back(char(d(gen)));
     }
-    return key;
+    return s;
+}
+
+// Step 1: pick files based on username
+void setUser(const string& username) {
+    MASTER_FILE = username + "_master.txt";
+    KEY_FILE = username + "_key.txt";
+    VAULT_FILE = username + "_vault.txt";
 }
 
 void initializeMaster() {
-    // 1) Load or create master password
+    // --- Load or create master password ---
     string master;
-    ifstream mfin(MASTER_FILE);
-    if (!mfin) {
-        cout << "Set master password: ";
+    ifstream fin(MASTER_FILE);
+    if (!fin) {
+        // first time for this user
+        cout << "Set master password for " << MASTER_FILE << ": ";
         getline(cin, master);
-        ofstream mout(MASTER_FILE);
-        mout << master;
+        ofstream fout(MASTER_FILE);
+        fout << master;
     }
     else {
-        getline(mfin, master);
+        getline(fin, master);
     }
 
-    // 2) Verify master password
+    // --- Verify ---
     cout << "Enter master password: ";
-    string guess;
-    getline(cin, guess);
-    if (guess != master) {
+    string attempt;
+    getline(cin, attempt);
+    if (attempt != master) {
         cerr << "Wrong master password\n";
         exit(1);
     }
 
-    // 3) Load old key (or generate new)
+    // --- Load old session key (or make a new one) ---
     string oldKey;
     ifstream kin(KEY_FILE);
     if (!kin) {
@@ -60,30 +72,34 @@ void initializeMaster() {
         getline(kin, oldKey);
     }
 
-    // 4) Decrypt all entries under oldKey
+    // --- Decrypt that user’s vault into memory ---
     vector<pair<string, string>> vault;
-    ifstream pin("passwords.txt");
-    setEncryptionKey(oldKey);
-    string line;
-    while (getline(pin, line)) {
-        auto pos = line.find_last_of(' ');
-        if (pos == string::npos) continue;
-        string site = line.substr(0, pos);
-        string enc = line.substr(pos + 1);
-        vault.emplace_back(site, decrypt(enc));
+    {
+        ifstream vin(VAULT_FILE);
+        setEncryptionKey(oldKey);
+        string line;
+        while (getline(vin, line)) {
+            auto pos = line.find_last_of(' ');
+            if (pos == string::npos) continue;
+            string site = line.substr(0, pos);
+            string enc = line.substr(pos + 1);
+            vault.emplace_back(site, decrypt(enc));
+        }
     }
 
-    // 5) Rotate to a new session key
+    // --- Rotate to a new session key ---
     string newKey = randomKey(oldKey.size());
     setEncryptionKey(newKey);
 
-    // 6) Re-encrypt vault under newKey
-    ofstream pout("passwords.txt", ios::trunc);
-    for (auto& e : vault) {
-        pout << e.first << ' ' << encrypt(e.second) << '\n';
+    // --- Re-encrypt and save the vault ---
+    {
+        ofstream vout(VAULT_FILE, ios::trunc);
+        for (auto& e : vault) {
+            vout << e.first << ' ' << encrypt(e.second) << '\n';
+        }
     }
 
-    // 7) Save newKey for next run
+    // --- Save new session key for next run ---
     ofstream kout(KEY_FILE, ios::trunc);
     kout << newKey;
 }
