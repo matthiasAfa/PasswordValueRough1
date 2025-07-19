@@ -2,6 +2,7 @@
 
 #include "PasswordManager.h"
 #include "encryptionfile.h"
+#include "masterPassword.h" 
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -29,10 +30,9 @@ void savePassword(const string& site, const string& password) {
         cerr << "Error: Unable to open file for writing." << endl;
         return;
     }
-	// Encrypt the password before saving
-	string encryptedPassword = encrypt(password);
-    file << site << ' ' << encryptedPassword << '\n';
-    displayMessage("Password saved successfully.");
+	// Randomize encryption key
+	file << site << ' ' << encrypt(password) << '\n';
+	displayMessage("[system] Password saved successfully.");
 }
 
 void loadPasswords() {

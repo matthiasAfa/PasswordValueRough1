@@ -1,5 +1,6 @@
 #include "PasswordManager.h"
 #include "encryptionfile.h"
+#include "masterPassword.h"
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -9,48 +10,32 @@
 using namespace std;
 
 int main() {
+    initializeMaster();  // ? unlock & rotate session key
+
     int choice = 0;
-    string site;
-    string password;
-
-    string encryptionKey;
-    cout << "Enter encryption key: ";
-    getline(cin, encryptionKey);
-    setEncryptionKey(encryptionKey);
-
+    string site, pw;
     do {
         displayMenu();
         cin >> choice;
-
         if (cin.fail()) {
             cin.clear();
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
             choice = 0;
         }
-
         switch (choice) {
         case 1:
-            displayMessage("Enter site name (multiple words allowed): ");
+            displayMessage("Enter site name:");
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
             getline(cin, site);
-            displayMessage("Enter password: ");
-            cin >> password;
-            savePassword(site, password);
+            displayMessage("Enter password:");
+            cin >> pw;
+            savePassword(site, pw);
             break;
-        case 2:
-            loadPasswords();
-            break;
-        case 3:
-            deletePassword();
-            break;
-        case 4:
-            displayMessage("[system] Exiting...");
-            break;
-        default:
-            displayMessage("[system] Invalid choice. Please try again.");
-            break;
+        case 2: loadPasswords(); break;
+        case 3: deletePassword(); break;
+        case 4: displayMessage("[Goodbye]"); break;
+        default: displayMessage("[Error] Invalid choice.");
         }
-
     } while (choice != 4);
 
     return 0;
