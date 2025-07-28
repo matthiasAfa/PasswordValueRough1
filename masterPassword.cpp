@@ -39,7 +39,7 @@ void setUser(const string& username) {
 }
 
 void initializeMaster() {
-    // --- Load or create master password ---
+    // Load or create master password 
     string master;
     ifstream fin(MASTER_FILE);
     if (!fin) {
@@ -53,7 +53,7 @@ void initializeMaster() {
         getline(fin, master);
     }
 
-    // --- Verify ---
+    // verify
     cout << "Enter master password: ";
     string attempt;
     getline(cin, attempt);
@@ -62,7 +62,7 @@ void initializeMaster() {
         exit(1);
     }
 
-    // --- Load old session key (or make a new one) ---
+    // Load old session key (or make a new one)
     string oldKey;
     ifstream kin(KEY_FILE);
     if (!kin) {
@@ -72,7 +72,7 @@ void initializeMaster() {
         getline(kin, oldKey);
     }
 
-    // --- Decrypt that user’s vault into memory ---
+    // Decrypt that user’s vault into memory 
     vector<pair<string, string>> vault;
     {
         ifstream vin(VAULT_FILE);

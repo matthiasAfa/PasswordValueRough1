@@ -17,8 +17,9 @@ void displayMenu() {
     displayMessage("1. Add Password");
     displayMessage("2. View Passwords");
     displayMessage("3. Delete Password");
-    displayMessage("4. Exit");
-    displayMessage("Enter your choice: ");
+    displayMessage("4. Switch User");
+    displayMessage("5. Exit");
+	cout << "Choose your choice: ";
 }
 
 void savePassword(const string& site, const string& password) {
